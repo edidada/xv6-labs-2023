@@ -14,7 +14,8 @@ jobs:
       - name: Build and grade
         run: |
           set -o pipefail
-          make grade 2>&1 | tee grade.log
+          mkdir -p .ci-results
+          make grade 2>&1 | tee .ci-results/grade.log
       - name: Capture syscall debugger exercises
         run: python3 scripts/debug-syscall.py
       - uses: actions/upload-artifact@v4
@@ -22,6 +23,6 @@ jobs:
         with:
           name: lab-results
           path: |
-            grade.log
+            .ci-results/grade.log
             xv6.out*
             debug-*.log

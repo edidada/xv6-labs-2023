@@ -27,3 +27,5 @@ barrier
 __MACOSX/
 __pycache__/
 debug-*.log
+
+.ci-results/
