@@ -19,7 +19,7 @@ char *p;
 struct link *l;
 
 struct link *ll_new() {
-  if (p + sizeof(struct link) > base + PGSIZE) {
+  if (base == 0 || p + sizeof(struct link) > base + PGSIZE) {
     return 0;
   }
 
@@ -28,7 +28,7 @@ struct link *ll_new() {
   return ret;
 }
 
-void ll_create() { l = 0; base = kalloc(); p = base; }
+void ll_create() { if(base) kfree(base); l = 0; base = kalloc(); p = base; }
 
 int ll_push(int value) {
   struct link *new = ll_new();
@@ -38,13 +38,12 @@ int ll_push(int value) {
 
   if (l == 0) {
     l = new;
+  } else {
+    struct link *end;
+    for (end = l; end->next != 0; end = end->next)
+      ;
+    end->next = new;
   }
-
-  struct link *end;
-  for (end = l; end->next != 0; end++)
-    ;
-
-  end->next = new;
   new->next = 0;
   new->value = value;
   return 0;
@@ -58,8 +57,8 @@ int ll_pop(void) {
   struct link *old = l;
   l = l->next;
   // Now let's clean up and make it harder to misuse.
-  l->next = 0;
+  old->next = 0;
   return old->value;
 }
 
-void ll_destroy(void) { kfree(base); base = 0; p = 0; }
+void ll_destroy(void) { if(base) kfree(base); base = 0; p = 0; l = 0; }
