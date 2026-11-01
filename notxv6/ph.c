@@ -16,6 +16,7 @@ struct entry {
 struct entry *table[NBUCKET];
 int keys[NKEYS];
 int nthread = 1;
+pthread_mutex_t bucket_lock[NBUCKET];
 
 
 double
@@ -42,6 +43,7 @@ void put(int key, int value)
   int i = key % NBUCKET;
 
   // is the key already present?
+  pthread_mutex_lock(&bucket_lock[i]);
   struct entry *e = 0;
   for (e = table[i]; e != 0; e = e->next) {
     if (e->key == key)
@@ -54,6 +56,7 @@ void put(int key, int value)
     // the new is new.
     insert(key, value, &table[i], table[i]);
   }
+  pthread_mutex_unlock(&bucket_lock[i]);
 
 }
 
@@ -111,6 +114,12 @@ main(int argc, char *argv[])
     exit(-1);
   }
   nthread = atoi(argv[1]);
+  if(nthread <= 0 || NKEYS % nthread != 0){
+    fprintf(stderr, "invalid thread count\n");
+    exit(1);
+  }
+  for(int i = 0; i < NBUCKET; i++)
+    assert(pthread_mutex_init(&bucket_lock[i], NULL) == 0);
   tha = malloc(sizeof(pthread_t) * nthread);
   srandom(0);
   assert(NKEYS % nthread == 0);
