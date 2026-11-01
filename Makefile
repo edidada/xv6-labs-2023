@@ -116,6 +116,7 @@ mkfs/mkfs: mkfs/mkfs.c $K/fs.h $K/param.h
 .PRECIOUS: %.o
 
 UPROGS=\
+	$U/_abitest\
 	$U/_cat\
 	$U/_echo\
 	$U/_forktest\
@@ -135,6 +136,9 @@ UPROGS=\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
+
+$U/_abitest: $U/abitest.o $U/abisum.o $(ULIB)
+	$(LD) $(LDFLAGS) -T $U/user.ld -o $@ $^
 
 -include kernel/*.d user/*.d
 

@@ -1,0 +1,16 @@
+#!/usr/bin/env python3
+from gradelib import *
+
+r = Runner(save("xv6.out"))
+
+@test(1, "RISC-V ABI")
+def abi_test():
+    r.run_qemu(shell_script(['abitest']))
+    r.match('^ABI TESTS PASSED$')
+
+@test(1, "kernel regression")
+def kernel_test():
+    r.run_qemu(shell_script(['usertests -q']), timeout=300)
+    r.match('^ALL TESTS PASSED$')
+
+run_tests()
