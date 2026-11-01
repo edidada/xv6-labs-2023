@@ -1,4 +1,5 @@
 struct buf;
+void vmprint(pagetable_t);
 struct context;
 struct file;
 struct inode;

@@ -74,8 +74,31 @@ sys_sleep(void)
 int
 sys_pgaccess(void)
 {
-  // lab pgtbl: your code here.
-  return 0;
+  uint64 start, result;
+  int count;
+  uint mask = 0;
+  argaddr(0, &start);
+  argint(1, &count);
+  argaddr(2, &result);
+  if(count < 0 || count > 32 || start >= MAXVA ||
+     (uint64)count * PGSIZE > MAXVA - start)
+    return -1;
+  struct proc *p = myproc();
+  // Validate the whole range before changing any access bits.
+  for(int i = 0; i < count; i++){
+    pte_t *pte = walk(p->pagetable, start + (uint64)i * PGSIZE, 0);
+    if(pte == 0 || (*pte & (PTE_V | PTE_U)) != (PTE_V | PTE_U))
+      return -1;
+  }
+  for(int i = 0; i < count; i++){
+    pte_t *pte = walk(p->pagetable, start + (uint64)i * PGSIZE, 0);
+    if(*pte & PTE_A){
+      mask |= 1U << i;
+      *pte &= ~PTE_A;
+    }
+  }
+  sfence_vma();
+  return copyout(p->pagetable, result, (char *)&mask, sizeof mask);
 }
 #endif
 
