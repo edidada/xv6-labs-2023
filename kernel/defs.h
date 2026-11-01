@@ -1,4 +1,5 @@
 struct buf;
+void backtrace(void);
 struct context;
 struct file;
 struct inode;

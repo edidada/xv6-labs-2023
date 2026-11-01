@@ -1,4 +1,6 @@
 struct stat;
+int sigalarm(int, void (*)(void));
+int sigreturn(void);
 
 // system calls
 int fork(void);
