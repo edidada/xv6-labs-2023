@@ -95,26 +95,58 @@ e1000_init(uint32 *xregs)
 int
 e1000_transmit(struct mbuf *m)
 {
-  //
-  // Your code here.
-  //
-  // the mbuf contains an ethernet frame; program it into
-  // the TX descriptor ring so that the e1000 sends it. Stash
-  // a pointer so that it can be freed after sending.
-  //
-  
+  acquire(&e1000_lock);
+  uint index = regs[E1000_TDT];
+  if(!(tx_ring[index].status & E1000_TXD_STAT_DD)){
+    release(&e1000_lock);
+    return -1;
+  }
+  __sync_synchronize();
+  if(tx_mbufs[index])
+    mbuffree(tx_mbufs[index]);
+  tx_mbufs[index] = m;
+  tx_ring[index].addr = (uint64)m->head;
+  tx_ring[index].length = m->len;
+  tx_ring[index].cmd = E1000_TXD_CMD_EOP | E1000_TXD_CMD_RS;
+  tx_ring[index].status = 0;
+  __sync_synchronize();
+  regs[E1000_TDT] = (index + 1) % TX_RING_SIZE;
+  release(&e1000_lock);
   return 0;
 }
 
 static void
 e1000_recv(void)
 {
-  //
-  // Your code here.
-  //
-  // Check for packets that have arrived from the e1000
-  // Create and deliver an mbuf for each packet (using net_rx()).
-  //
+  for(;;){
+    acquire(&e1000_lock);
+    uint index = (regs[E1000_RDT] + 1) % RX_RING_SIZE;
+    if(!(rx_ring[index].status & E1000_RXD_STAT_DD)){
+      release(&e1000_lock);
+      return;
+    }
+    __sync_synchronize();
+    struct mbuf *received = rx_mbufs[index];
+    struct mbuf *replacement = mbufalloc(0);
+    int good = replacement && !rx_ring[index].errors &&
+      (rx_ring[index].status & E1000_RXD_STAT_EOP) &&
+      rx_ring[index].length <= MBUF_SIZE;
+    received->len = rx_ring[index].length;
+    if(replacement){
+      rx_mbufs[index] = replacement;
+      rx_ring[index].addr = (uint64)replacement->head;
+    }
+    rx_ring[index].status = 0;
+    __sync_synchronize();
+    regs[E1000_RDT] = index;
+    release(&e1000_lock);
+    // ARP handling can transmit, so never hold the device lock here.
+    if(good)
+      net_rx(received);
+    else if(replacement)
+      mbuffree(received);
+    // On allocation failure the original buffer stays in the RX ring.
+  }
 }
 
 void
