@@ -1,4 +1,7 @@
 struct buf;
+void kaddref(uint64);
+int krefcount(uint64);
+int cowresolve(pagetable_t, uint64);
 struct context;
 struct file;
 struct inode;

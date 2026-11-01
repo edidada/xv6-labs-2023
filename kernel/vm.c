@@ -315,7 +315,6 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
   pte_t *pte;
   uint64 pa, i;
   uint flags;
-  char *mem;
 
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walk(old, i, 0)) == 0)
@@ -324,18 +323,20 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
       panic("uvmcopy: page not present");
     pa = PTE2PA(*pte);
     flags = PTE_FLAGS(*pte);
-    if((mem = kalloc()) == 0)
-      goto err;
-    memmove(mem, (char*)pa, PGSIZE);
-    if(mappages(new, i, PGSIZE, (uint64)mem, flags) != 0){
-      kfree(mem);
+    if(flags & PTE_W)
+      flags = (flags & ~PTE_W) | PTE_COW;
+    if(mappages(new, i, PGSIZE, pa, flags) != 0){
       goto err;
     }
+    kaddref(pa);
+    *pte = PA2PTE(pa) | flags;
   }
+  sfence_vma();
   return 0;
 
  err:
   uvmunmap(new, 0, i / PGSIZE, 1);
+  sfence_vma();
   return -1;
 }
 
@@ -366,6 +367,8 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
     if(va0 >= MAXVA)
       return -1;
     pte = walk(pagetable, va0, 0);
+    if(pte && (*pte & PTE_COW) && cowresolve(pagetable, va0) < 0)
+      return -1;
     if(pte == 0 || (*pte & PTE_V) == 0 || (*pte & PTE_U) == 0 ||
        (*pte & PTE_W) == 0)
       return -1;
@@ -448,4 +451,32 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
   } else {
     return -1;
   }
+}
+
+// Resolve a COW page for either a user store fault or kernel copyout.
+int
+cowresolve(pagetable_t pagetable, uint64 va)
+{
+  if(va >= MAXVA)
+    return -1;
+  va = PGROUNDDOWN(va);
+  pte_t *pte = walk(pagetable, va, 0);
+  if(pte == 0 || (*pte & (PTE_V | PTE_U | PTE_COW)) !=
+                            (PTE_V | PTE_U | PTE_COW))
+    return -1;
+  uint64 pa = PTE2PA(*pte);
+  uint flags = (PTE_FLAGS(*pte) | PTE_W) & ~PTE_COW;
+  // With one reference, this process already owns the page exclusively.
+  if(krefcount(pa) == 1){
+    *pte = PA2PTE(pa) | flags;
+  } else {
+    char *mem = kalloc();
+    if(mem == 0)
+      return -1;
+    memmove(mem, (char *)pa, PGSIZE);
+    *pte = PA2PTE((uint64)mem) | flags;
+    kfree((void *)pa);
+  }
+  sfence_vma();
+  return 0;
 }
