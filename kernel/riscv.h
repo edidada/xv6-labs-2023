@@ -339,6 +339,7 @@ typedef uint64 *pagetable_t; // 512 PTEs
 #define PGROUNDDOWN(a) (((a)) & ~(PGSIZE-1))
 
 #define PTE_V (1L << 0) // valid
+#ifndef __ASSEMBLER__
 static inline uint64
 r_fp(void)
 {
@@ -346,6 +347,7 @@ r_fp(void)
   asm volatile("mv %0, s0" : "=r" (x));
   return x;
 }
+#endif
 
 #define PTE_R (1L << 1)
 #define PTE_W (1L << 2)
