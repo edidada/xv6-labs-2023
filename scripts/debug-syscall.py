@@ -1,7 +1,6 @@
 """Capture the lab's GDB observations on the Actions runner only."""
 import pathlib
 import subprocess
-import time
 
 
 def observe(label, commands):
