@@ -25,3 +25,8 @@ barrier
 .DS_Store
 *.dSYM
 *.pcap
+
+._*
+__MACOSX/
+__pycache__/
+.ci-results/

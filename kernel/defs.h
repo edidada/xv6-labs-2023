@@ -3,6 +3,11 @@ typedef unsigned long size_t;
 typedef long int off_t;
 #endif
 struct buf;
+struct proc;
+int mmapfault(struct proc *, uint64, int);
+int mmapcopy(struct proc *, struct proc *);
+int mmapunmap(struct proc *, uint64, uint64);
+void mmapclose(struct proc *);
 struct context;
 struct file;
 struct inode;

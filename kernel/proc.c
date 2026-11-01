@@ -264,6 +264,12 @@ growproc(int n)
 
   sz = p->sz;
   if(n > 0){
+    uint64 limit = TRAPFRAME;
+    for(int i = 0; i < NVMA; i++)
+      if(p->vmas[i].file && p->vmas[i].start < limit)
+        limit = p->vmas[i].start;
+    if(sz > limit || (uint64)n > limit - sz)
+      return -1;
     if((sz = uvmalloc(p->pagetable, sz, sz + n, PTE_W)) == 0) {
       return -1;
     }
@@ -295,6 +301,11 @@ fork(void)
     return -1;
   }
   np->sz = p->sz;
+  if(mmapcopy(p, np) < 0){
+    freeproc(np);
+    release(&np->lock);
+    return -1;
+  }
 
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
@@ -352,6 +363,7 @@ exit(int status)
     panic("init exiting");
 
   // Close all open files.
+  mmapclose(p);
   for(int fd = 0; fd < NOFILE; fd++){
     if(p->ofile[fd]){
       struct file *f = p->ofile[fd];

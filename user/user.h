@@ -3,6 +3,8 @@ typedef unsigned long size_t;
 typedef long int off_t;
 #endif
 struct stat;
+void *mmap(void *, int, int, int, int, int);
+int munmap(void *, int);
 
 // system calls
 int fork(void);

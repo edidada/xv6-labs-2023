@@ -9,6 +9,7 @@ K=kernel
 U=user
 
 OBJS = \
+  $K/mmap.o \
   $K/entry.o \
   $K/kalloc.o \
   $K/string.o \
@@ -172,6 +173,7 @@ mkfs/mkfs: mkfs/mkfs.c $K/fs.h $K/param.h
 .PRECIOUS: %.o
 
 UPROGS=\
+	$U/_mmaptest\
 	$U/_cat\
 	$U/_echo\
 	$U/_forktest\
