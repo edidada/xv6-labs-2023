@@ -6,11 +6,10 @@
 2. 编译器把 g 内联进 f，并把 f(8)+1 常量折叠为 12；main 中没有
    对 f/g 的实际调用，直接把 12 装入 a1。
 
-3. printf 的具体链接地址必须查看本次远程编译的 user/call.asm；
-   它作为 Actions artifact 保存。地址随工具链和用户库变化。
+3. Actions run 41290859099 的 user/call.asm 中 printf 位于 0x652。
 
-4. jalr 写入 ra 的是下一条指令地址，即调用点地址加该指令长度。
-   本次 main 的确切调用点以 artifact 中的 user/call.asm 为准。
+4. 同次远程构建中 main 在 0x34 执行 4 字节 jalr，调用 printf 后
+   ra = 0x38，即下一条指令地址。
 
 5. 输出 He110 World。57616 是十六进制 e110；小端内存中 i 的
    字节是 72 6c 64 00，即字符串 rld。大端要改为 0x726c6400；

@@ -28,3 +28,4 @@ barrier
 ._*
 __MACOSX/
 __pycache__/
+.ci-results/
