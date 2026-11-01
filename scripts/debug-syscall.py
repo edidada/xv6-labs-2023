@@ -45,7 +45,7 @@ try:
                                        "num = *(int *)0;", 1))
     subprocess.run(["make", "kernel/kernel"], check=True)
     observe("fault", [
-        "break kerneltrap", "continue", "backtrace",
+        "break kerneltrap if $scause == 13", "continue", "backtrace",
         "p /x $scause", "p /x $stval", "p /x $sepc", "x/i $sepc",
         "p cpus[0].proc->name", "p cpus[0].proc->pid", "detach",
     ])
