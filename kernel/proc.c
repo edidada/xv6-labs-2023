@@ -10,6 +10,19 @@ struct cpu cpus[NCPU];
 
 struct proc proc[NPROC];
 
+uint64
+processcount(void)
+{
+  uint64 count = 0;
+  for(struct proc *p = proc; p < &proc[NPROC]; p++){
+    acquire(&p->lock);
+    if(p->state != UNUSED)
+      count++;
+    release(&p->lock);
+  }
+  return count;
+}
+
 struct proc *initproc;
 
 int nextpid = 1;
@@ -123,6 +136,7 @@ allocproc(void)
 
 found:
   p->pid = allocpid();
+  p->tracemask = 0;
   p->state = USED;
 
   // Allocate a trapframe page.
@@ -295,6 +309,7 @@ fork(void)
     return -1;
   }
   np->sz = p->sz;
+  np->tracemask = p->tracemask;
 
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);

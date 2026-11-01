@@ -1,0 +1,22 @@
+参考要求：https://pdos.csail.mit.edu/6.1810/2023/labs/syscall.html
+
+1. syscall 的直接调用者是 usertrap，用户态通过 ecall 触发异常，
+   usertrap 检查 scause == 8 后调用 syscall。
+
+2. 首次系统调用时 a7 == 7，即 SYS_exec。user/initcode.S 将它装入
+   a7，参数指向 /init 及 argv，然后执行 ecall。
+
+3. 前一个特权级是 U 模式。sstatus 的 SPP 位（第 8 位）为零。
+
+4. num = *(int *)0 对零地址执行 lw 加载。具体指令地址及目标寄存器
+   依赖编译结果，不能沿用题面地址。Actions 的 debug-fault.log 会用
+   x/i $sepc 保存本次工具链实际生成的故障指令；该 lw 的目标寄存器
+   对应 num 的加载结果。
+
+5. 内核页表没有映射虚拟地址零，读取它导致 load page fault。
+   scause == 13（0xd）表示加载缺页；stval == 0 是访问的虚拟地址。
+   内核不能通过用户缺页处理恢复此错误，因此 kerneltrap panic。
+
+6. 第一次 exec 尚未完成，进程名为 userinit，pid 为 1。
+   Actions 的调试脚本在正常 syscall 和注入故障的 kerneltrap 两处
+   保存进程名、pid、寄存器与回溯，作为运行验证。

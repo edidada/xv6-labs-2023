@@ -1,4 +1,6 @@
 struct buf;
+uint64 freememory(void);
+uint64 processcount(void);
 struct context;
 struct file;
 struct inode;
