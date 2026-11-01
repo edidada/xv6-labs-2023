@@ -25,3 +25,7 @@ barrier
 .DS_Store
 ._*
 __MACOSX/
+
+__pycache__/
+
+.ci-results/
