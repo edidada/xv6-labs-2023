@@ -3,8 +3,8 @@ import sys
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 addr = ('localhost', int(sys.argv[1]))
-print('listening on %s port %s' % addr, file=sys.stderr)
 sock.bind(addr)
+print('listening on %s port %s' % addr, file=sys.stderr, flush=True)
 
 while True:
     buf, raddr = sock.recvfrom(4096)

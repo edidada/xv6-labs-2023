@@ -23,5 +23,6 @@ jobs:
           name: lab-results
           path: |
             .ci-results/grade.log
+            .ci-results/server.log
             xv6.out*
             packets.pcap
