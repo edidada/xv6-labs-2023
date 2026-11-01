@@ -9,8 +9,8 @@ K=kernel
 U=user
 
 OBJS = \
-  $K/mmap.o \
   $K/entry.o \
+  $K/mmap.o \
   $K/kalloc.o \
   $K/string.o \
   $K/main.o \
