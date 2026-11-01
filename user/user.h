@@ -1,4 +1,5 @@
 struct stat;
+int symlink(const char *, const char *);
 
 // system calls
 int fork(void);
